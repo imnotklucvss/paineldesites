@@ -13,13 +13,13 @@ const municipios = [
   {"id": "botucatu-sp", "name": "Botucatu - SP", "url": "https://www.botucatu-sp.vivver.com/login"},
   {"id": "buritizeiro-mg", "name": "Buritizeiro - MG", "url": "https://www.buritizeiro-mg.vivver.com/login"},
   {"id": "campanha-mg", "name": "Campanha - MG", "url": "https://www.campanha-mg.vivver.com/login"},
-  {"id": "campinagrande-pb", "name": "Campina Grande - PB", "url": "https://campinagrande-pb.vivver.com/login"},
   {"id": "cantagalo-mg", "name": "Cantagalo - MG", "url": "https://cantagalo-mg.vivver.com/login"},
   {"id": "carai-mg", "name": "Caraí - MG", "url": "https://www.carai-mg.vivver.com/login"},
   {"id": "carmodocajuru-mg", "name": "Carmo do Cajuru - MG", "url": "https://www.carmodocajuru-mg.vivver.com/login"},
   {"id": "carmodoparanaiba-mg", "name": "Carmo do Paranaíba - MG", "url": "http://www.carmodoparanaiba-mg.vivver.com/login"},
   {"id": "cassia-mg", "name": "Cássia - MG", "url": "http://www.cassia-mg.vivver.com/login"},
   {"id": "cataguases-mg", "name": "Cataguases - MG", "url": "http://www.cataguases-mg.vivver.com/login"},
+  {"id": "cislap-mg", "name": "CISLAP - MG", "url": "https://cislap-mg.vivver.com/login"},
   {"id": "cisleste-mg", "name": "CISLESTE - MG", "url": "https://www.cisleste-mg.vmx.io/login"},
   {"id": "cisrec-mg", "name": "CISREC - MG", "url": "https://cisrec-mg.vivver.com/login"},
   {"id": "claraval-mg", "name": "Claraval - MG", "url": "https://www.claraval-mg.vivver.com/login"},
@@ -32,6 +32,8 @@ const municipios = [
   {"id": "curvelo-mg", "name": "Curvelo - MG", "url": "https://curvelo-mg.vivver.com/login"},
   {"id": "diamantina-mg", "name": "Diamantina - MG", "url": "https://www.diamantina-mg.vivver.com/login"},
   {"id": "divinopolis-mg", "name": "Divinópolis - MG", "url": "https://divinopolis-mg.vivver.com/login"},
+  {"id": "tv-3-divinolis-mg", "name": "TV-Divinópolis - MG", "url": "https://tv-divinopolis-mg.vivver.com"},
+  {"id": "divinopolis-mg-tst", "name": "Divinópolis - MG[TST]", "url": "https://divinopolis-mg-tst.vivver.com/login"},
   {"id": "dombosco-mg", "name": "Dom Bosco - MG", "url": "https://dombosco-mg.vivver.com/login"},
   {"id": "fama-mg", "name": "Fama - MG", "url": "http://www.fama-mg.vivver.com/login"},
   {"id": "franciscosa-mg", "name": "Francisco Sá - MG", "url": "http://www.franciscosa-mg.vivver.com/login"},
@@ -131,7 +133,8 @@ const municipios = [
   {"id": "voltaredonda-rj", "name": "Volta Redonda - RJ", "url": "https://voltaredonda-rj.vivver.com/login"},
   {"id": "tv-3-voltaredonda-rj", "name": "TV-Volta Redonda - RJ", "url": "https://tv-voltaredonda-rj.vivver.com"},
   {"id": "voltaredonda-rj-tst", "name": "Volta Redonda - RJ[TST]", "url": "https://voltaredonda-rj-tst.vivver.com/login"},
-  {"id": "apresentacao", "name": "Banco de Apresentação", "url": "https://apresentacao.vivver.com/login"},
+  {"id": "apresentacao", "name": "Banco de Apresentação", "url": "https://www.apresentacao.vivver.com/login"},
+  {"id": "apresentacao2", "name": "Banco de Apresentação [2]", "url": "https:/apresentacao2.vivver.com/login"},
   {"id": "homologacao", "name": "Homologação", "url": "https://homologacao.vivver.com/login"},
   {"id": "tv-2", "name": "TV-2", "url": "https://tv2-fila.vivver.com"},
   {"id": "tv-3", "name": "TV-3", "url": "https://tv3-fila.vivver.com"},
@@ -242,37 +245,26 @@ async function verificarStatus(municipio) {
       // Se falhar com CORS, tentar método alternativo
     }
     
-    // Tentativa 2: Usando fetch com modo 'no-cors' mas verificando tipo de erro
-    try {
-      const controller2 = new AbortController();
-      const timeoutId2 = setTimeout(() => controller2.abort(), 8000);
-      
-      const response = await fetch(municipio.url, {
-        method: 'GET',
-        mode: 'no-cors',
-        cache: 'no-store',
-        signal: controller2.signal
-      });
-      
-      clearTimeout(timeoutId2);
-      
-      // No modo 'no-cors', não podemos ler a resposta, mas podemos tentar uma requisição separada para a versão
-      // Tentar buscar apenas a versão com uma requisição específica
-      try {
-        const versaoResponse = await fetch(`${municipio.url}/api/version`, {
-          method: 'GET',
-          mode: 'no-cors',
-          signal: AbortSignal.timeout(3000)
-        }).catch(() => null);
-        
-        // Se não conseguir a versão por API, pelo menos sabemos que o site está online
-        return { status: true, versao: null };
-      } catch {
-        return { status: true, versao: null };
-      }
-    } catch (noCorsError) {
-      // Se falhar também com no-cors, provavelmente está offline
-    }
+    // Tentativa 2: Usando fetch com modo 'no-cors' apenas para testar se responde
+try {
+  const controller2 = new AbortController();
+  const timeoutId2 = setTimeout(() => controller2.abort(), 8000);
+
+  await fetch(municipio.url, {
+    method: 'HEAD', // usa HEAD para minimizar dados
+    mode: 'no-cors',
+    cache: 'no-store',
+    signal: controller2.signal
+  });
+
+  clearTimeout(timeoutId2);
+
+  // Se chegou até aqui, o servidor respondeu (mesmo que não possamos ler o conteúdo)
+  return { status: true, versao: null };
+} catch (noCorsError) {
+  // Se falhou (timeout, rede ou DNS), está offline
+  return { status: false, versao: null };
+}
     
     // Tentativa 3: Usando XMLHttpRequest (mais compatível)
     try {
